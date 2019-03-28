@@ -1,0 +1,10 @@
+regIdxCollision:
+mnh(
+  and(
+    X != Y,
+    reg(X),
+    reg(Y),
+    regIndex(X,Z),
+    regIndex(Y,Z)
+  )
+).

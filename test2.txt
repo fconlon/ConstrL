@@ -1,0 +1,38 @@
+constr1:
+mnh(
+  or(
+    a(
+      T1, T2
+    ),
+    i < j
+  )
+).
+
+constr2:
+mh(
+  and(
+    b(T8),
+    j != k
+  )
+).
+
+constr3:
+if
+  x = 5
+then
+mh(
+  and(e(T6))
+).
+
+constr4:
+if
+  or(d(T5))
+then
+mnh(
+  or(
+    f(T4),
+    and(g(T9), m(T11)),
+    or(l(T10), n(T12)),
+    h(T3)
+  )
+).

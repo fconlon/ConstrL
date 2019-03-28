@@ -1,0 +1,37 @@
+##SYNTAX##
+
+PROG -> CONSTR. | CONSTR.PROG | epsilon
+CONSTR -> NAME: MUST | NAME: if TERM then MUST
+NAME -> valid ASP predicate name
+MUST -> mh(EXPR) | mnh(EXPR)
+EXPR -> and TERMSLIST | or TERMSLIST
+TERMSLIST -> (TERMS
+TERMS -> TERM) | TERM,TERMS
+TERM -> NAME (VARLIST | NAME COMPOP NAME | EXPR
+VARLIST -> NAME) | NAME,VARLIST
+COMPOP -> < | > | = | <= | >= | !=
+
+
+##SEMANTICS##
+mh(EXPR) becomes
+constr_met(EXPR_VARS) :- EXPR
+constr_v(EXPR_VARS) :- not constr_met(EXPR_VARS)
+
+mnh(EXPR) becomes
+constr_v(EXPR_VARS) :- EXPR
+
+if E1 then mh(E2) becomes
+constr_met(E1_VARS, E2_VARS):- E1, not E2
+constr_v(E1_VARS, E2_VARS) :- not constr_met(E1_VRS, E2_VRS)
+
+if EXPR1 then mnh(EXPR2) becomes
+constr_v(E1_VARS, E2_VARS):- E1, E2
+
+and(T1, T2 ... TN) becomes
+E(TERMS_VARS) :- T1, T2 ... TN
+
+or(T1, T2 ... TN) becomes
+E(TERMS_VARS) :- T1, SORT_PREDS
+E(TERMS_VARS) :- T2, SORT_PREDS
+...
+E(TERMS_VARS) :- TN, SORT_PREDS
