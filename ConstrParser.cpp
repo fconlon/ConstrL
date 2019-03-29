@@ -323,7 +323,7 @@ bool ConstrParser::term(){
       this->clear_space();
       std::string variable = this->get_name();
       if(variable.size() > 0){
-        this->ast.add_var(variable, "");
+        this->ast.add_var(variable);
         return true;
       }
       //comparison operator must be followed by a variable
@@ -340,7 +340,7 @@ bool ConstrParser::varlist(){
   std::string variable = this->get_name();
 
   if(variable.size() > 0){
-    this->ast.add_var(variable, "");
+    this->ast.add_var(variable);
     this->clear_space();
     char c = this->next_token();
     if(c == ')'){
@@ -361,7 +361,7 @@ bool ConstrParser::compop(){
   char c = this->next_token();
 
   if(c == '='){
-    this->ast.add_var("=", "op");
+    this->ast.add_var("=");
     return true;
   }
   if(c == '<' || c == '>'){
@@ -373,13 +373,13 @@ bool ConstrParser::compop(){
     }else{
       op += "=";
     }
-    this->ast.add_var(op, "op");
+    this->ast.add_var(op);
     return true;
   }
   if(c == '!'){
     c = this->next_token();
     if(c == '='){
-      this->ast.add_var("!=", "op");
+      this->ast.add_var("!=");
       return true;
     }
     //invalid != operator

@@ -57,16 +57,20 @@ class AST{
 
   class ExprNode: public ASTNode{
     exprType eType;
+    bool built;
   public:
     ExprNode(exprType);
     void build_asp();
+    friend class AST;
   };
 
   class TermNode: public ASTNode{
     termType tType;
+    int varPos;
   public:
     TermNode(termType);
     void build_asp();
+    friend class AST;
   };
 
   ASTNode *constraints, *curr;
@@ -81,7 +85,7 @@ public:
   void add_constraint(std::string type);
   void add_sibling(std::string);
   void add_child(std::string);
-  void add_var(std::string, std::string);
+  void add_var(std::string);
   void ascend();
   void descend();
   void advance();

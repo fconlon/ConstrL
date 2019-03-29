@@ -41,15 +41,20 @@ AST::ConstrNode::ConstrNode(constrType type): ASTNode(CONSTR){
 }
 
 void AST::ConstrNode::build_asp(){
+  std::string predString = ", ";
   std::string varString = "(";
   std::map<std::string, std::string>::iterator it = this->vars.begin();
   varString += it->first;
-  if(this->parent && !this->parent->vars.count(it->first)){
+  if(this->parent && (!this->parent->vars.count(it->first) ||
+     this->parent->vars[it->first] == "")){
     this->parent->vars[it->first] = it->second;
   }
+  predString += it->second + "(" + it->first + ")";
   for(it++; it != this->vars.end(); it++){
     varString += ", " + it->first;
-    if(this->parent && !this->parent->vars.count(it->first)){
+    predString += ", " + it->second + "(" + it->first + ")";
+    if(this->parent && (!this->parent->vars.count(it->first) ||
+       this->parent->vars[it->first] == "")){
       this->parent->vars[it->first] = it->second;
     }
   }
@@ -57,18 +62,21 @@ void AST::ConstrNode::build_asp(){
   this->asp += this->name;
   if(this->cType == MH){
     this->asp += varString + " :- not "+ this->name \
-               + "_met" + varString + ".\n";
+               + "_met" + varString + predString + ".\n";
     this->asp += this->name + "_met" + varString + " :- " \
-               + this->terms->name + ".\n";
+               + this->terms->name + predString + ".\n";
 
   }
   this->name += varString;
   if(this->cType == MNH){
-    this->asp += varString + " :- " + this->terms->name + ".\n";
+    this->asp += varString + " :- " + this->terms->name + predString + ".\n";
   }
   if(this->cType == IF){
     this->asp += varString + " :- " + this->terms->name \
-               + ", " + this->terms->next->name + ".\n";
+               + ", " + this->terms->next->name + predString + ".\n";
+    if(this->terms->type == EXPR){
+      this->asp += this->terms->asp;
+    }
     this->asp += this->terms->next->asp;
     return;
   }
@@ -80,25 +88,43 @@ void AST::ConstrNode::build_asp(){
 ///ExprNode
 AST::ExprNode::ExprNode(exprType type): ASTNode(EXPR){
   this->eType = type;
+  this->built = false;
   this->name = "Default ExprNode";
 }
 
 void AST::ExprNode::build_asp(){
-  this->name += "(";
+  std::string predString = ", ";
+  std::string varString = "(";
   std::map<std::string, std::string>::iterator it = this->vars.begin();
-  this->name += it->first;
-  if(!this->parent->vars.count(it->first)){
+
+  varString += it->first;
+  if(!this->parent->vars.count(it->first) ||
+     this->parent->vars[it->first] == ""){
     this->parent->vars[it->first] = it->second;
   }
+  predString += it->second + "(" + it->first + ")";
   for(it++; it != this->vars.end(); it++){
-    this->name += ", " + it->first;
-    if(!this->parent->vars.count(it->first)){
+    varString += ", " + it->first;
+    predString += ", " + it->second + "(" + it->first + ")";
+    if(!this->parent->vars.count(it->first) ||
+       this->parent->vars[it->first] == ""){
       this->parent->vars[it->first] = it->second;
     }
   }
-  this->name += ")";
-  this->asp += name + " :- " + this->terms->asp;
+  this->name += varString + ")";
+  this->asp += this->name + " :- ";
   std::string termASP, subExprASP = "";
+  if(this->terms->type == EXPR){
+    this->asp += this->terms->name;
+    subExprASP += this->terms->asp;
+  }
+  else{
+    this->asp += this->terms->asp;
+  }
+  if(this->eType == OR){
+    this->asp += predString;
+  }
+
   for(ASTNode *temp = this->terms->next; temp; temp = temp->next){
     if(temp->type == EXPR){
       termASP = temp->name;
@@ -111,8 +137,11 @@ void AST::ExprNode::build_asp(){
       this->asp += ", " + termASP;
     }
     else{
-      this->asp += ".\n" + this->name + " :- " + termASP;
+      this->asp += ".\n" + this->name + " :- " + termASP + predString;
     }
+  }
+  if(this->eType == AND){
+    this->asp += predString;
   }
   this->asp += ".\n" + subExprASP;
 }
@@ -120,6 +149,7 @@ void AST::ExprNode::build_asp(){
 ///TermNode
 AST::TermNode::TermNode(termType type): ASTNode(TERM){
   this->tType = type;
+  this->varPos = 0;
   this->name = "Default TermNode";
 }
 
@@ -133,7 +163,8 @@ void AST::TermNode::build_asp(){
         this->asp += ", ";
       }
       this->asp += it->first;
-      if(!this->parent->vars.count(it->first)){
+      if(!this->parent->vars.count(it->first)||
+         this->parent->vars[it->first] == ""){
         this->parent->vars[it->first] = it->second;
       }
     }
@@ -332,11 +363,25 @@ void AST::add_child(std::string type){
   }
 }
 
-void AST::add_var(std::string var, std::string pred){
-  if(this->curr->type == TERM){
-    std::cout << this->curr->name << std::endl;
+void AST::add_var(std::string var){
+  TermNode *tNode = dynamic_cast<TermNode*>(this->curr);
+  if(tNode->tType == PRED){
+    tNode->add_var(var, this->sortMap[tNode->name][tNode->varPos]);
+    tNode->varPos++;
   }
-  this->curr->add_var(var, pred);
+  else{
+    if(var == "="  ||
+       var == "<"  ||
+       var == ">"  ||
+       var == "<=" ||
+       var == ">=" ||
+       var == "!="){
+      tNode->add_var(var, "op");
+    }
+    else{
+      tNode->add_var(var, "");
+    }
+  }
 }
 
 void AST::ascend(){

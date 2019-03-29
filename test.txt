@@ -1,9 +1,14 @@
 regIdxCollision:
+if
+  or(
+    X = Y
+  )
+then
 mnh(
   and(
-    X != Y,
-    reg(X),
-    reg(Y),
+    or(
+      X = Z
+    ),
     regIndex(X,Z),
     regIndex(Y,Z)
   )
