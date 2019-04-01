@@ -7,7 +7,7 @@ then
 mnh(
   and(
     or(
-      X = Z
+      X = Z 
     ),
     regIndex(X,Z),
     regIndex(Y,Z)

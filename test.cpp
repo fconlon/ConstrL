@@ -7,7 +7,7 @@ int main(){
   if(myParser->parse()){
     std::cout << "pass\n";
     myParser->build_asp();
-    std::cout << myParser->get_asp();
+    //std::cout << myParser->get_asp();
   }
   else{
     std::cout << "fail\n";
