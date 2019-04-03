@@ -185,17 +185,19 @@ void AST::ExprNode::build_asp(){
       buildASP += ", " + termASP;
     }
     else{
-      buildASP += ".\n" + this->name + " :- " + termASP + predString;
+      buildASP += ".\n" + this->name + varString + " :- " + termASP + predString;
     }
   }
   if(this->eType == AND){
     buildASP += predString;
   }
-  this->name += varString;
-  this->asp += buildASP + ".\n" + subExprASP;
-  //std::cout << this->asp << std::endl;
-  //std::cout << this->name << " built\n";
-  this->built = true;
+  if(varsSorted){
+    this->name += varString;
+    this->asp += buildASP + ".\n" + subExprASP;
+    //std::cout << this->asp << std::endl;
+    //std::cout << this->name << " built\n";
+    this->built = true;
+  }
 }
 
 ///TermNode

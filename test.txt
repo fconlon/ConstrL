@@ -7,12 +7,18 @@ then
 mnh(
   and(
     or(
-      X = Z
+      X = Z,
+      or(
+        Y = Z
+      )
     ),
     regIndex(X,Z),
     regIndex(Y,Z),
     or(
-      X = Y
+      X = Y,
+      and(
+        Y = X
+      )
     )
   )
 ).
