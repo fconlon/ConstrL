@@ -50,6 +50,7 @@ class AST{
 
   class ConstrNode: public ASTNode{
     constrType cType;
+    bool built;
   public:
     ConstrNode(constrType);
     void build_asp();

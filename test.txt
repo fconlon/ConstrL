@@ -1,24 +1,49 @@
 regIdxCollision:
 if
+and(
+  or(
+    X = Z,
+    or(
+      Y = Z
+    )
+  ),
+  regIndex(X,Z),
+  regIndex(Y,Z),
+  or(
+    X = Y,
+    and(
+      Y = X
+    )
+  )
+)
+then
+mnh(
   or(
     X = Y
   )
+).
+
+regIdxCollision2:
+if
+and(
+  or(
+    X = Z,
+    or(
+      Y = Z
+    )
+  ),
+  regIndex(X,Z),
+  regIndex(Y,Z),
+  or(
+    X = Y,
+    and(
+      Y = X
+    )
+  )
+)
 then
 mnh(
-  and(
-    or(
-      X = Z,
-      or(
-        Y = Z
-      )
-    ),
-    regIndex(X,Z),
-    regIndex(Y,Z),
-    or(
-      X = Y,
-      and(
-        Y = X
-      )
-    )
+  or(
+    X = Y
   )
 ).

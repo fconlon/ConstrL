@@ -37,6 +37,7 @@ std::string AST::ASTNode::get_asp(){
 ///ConstrNode
 AST::ConstrNode::ConstrNode(constrType type): ASTNode(CONSTR){
   this->cType = type;
+  this->built = false;
   this->name = "Default ConstrNode";
 }
 
@@ -45,9 +46,13 @@ void AST::ConstrNode::build_asp(){
   std::string varString = "(";
   std::map<std::string, std::string>::iterator it = this->vars.begin();
   varString += it->first;
+  bool varsSorted = true;
   if(this->parent && (!this->parent->vars.count(it->first) ||
      this->parent->vars[it->first] == "")){
     this->parent->vars[it->first] = it->second;
+  }
+  if(it->second == ""){
+    varsSorted = false;
   }
   predString += it->second + "(" + it->first + ")";
   for(it++; it != this->vars.end(); it++){
@@ -57,9 +62,36 @@ void AST::ConstrNode::build_asp(){
        this->parent->vars[it->first] == "")){
       this->parent->vars[it->first] = it->second;
     }
+    if(it->second == ""){
+      varsSorted = false;
+    }
+  }
+  if(!varsSorted){
+    return;
+  }
+  if(this->terms->type == EXPR){
+    ExprNode *eNode = dynamic_cast<ExprNode*>(this->terms);
+    if(!eNode->built){
+      for(it = eNode->vars.begin(); it != eNode->vars.end(); it++){
+        if(it->second == ""){
+          if(this->vars.count(it->first) && this->vars[it->first] != ""){
+            eNode->vars[it->first] = this->vars[it->first];
+          }
+          else{
+            varsSorted = false;
+          }
+        }
+      }
+      if(varsSorted){
+        eNode->build_asp();
+      }
+      else{
+        return;
+      }
+    }
   }
   varString += ")";
-  this->asp += this->name;
+  this->asp += "%" + this->name + "\n" + this->name;
   if(this->cType == MH){
     this->asp += varString + " :- not "+ this->name \
                + "_met" + varString + predString + ".\n";
@@ -72,17 +104,38 @@ void AST::ConstrNode::build_asp(){
     this->asp += varString + " :- " + this->terms->name + predString + ".\n";
   }
   if(this->cType == IF){
+    ConstrNode *cNode = dynamic_cast<ConstrNode*>(this->terms->next);
+    if(!cNode->built){
+      for(it = cNode->vars.begin(); it != cNode->vars.end(); it++){
+        if(it->second == ""){
+          if(this->vars.count(it->first) && this->vars[it->first] != ""){
+            cNode->vars[it->first] = this->vars[it->first];
+          }
+          else{
+            varsSorted = false;
+          }
+        }
+      }
+      if(varsSorted){
+        cNode->build_asp();
+      }
+      else{
+        return;
+      }
+    }
     this->asp += varString + " :- " + this->terms->name \
                + ", " + this->terms->next->name + predString + ".\n";
     if(this->terms->type == EXPR){
       this->asp += this->terms->asp;
     }
     this->asp += this->terms->next->asp;
+    this->built = true;
     return;
   }
   for(ASTNode *temp = this->terms; temp; temp = temp->next){
     this->asp += temp->get_asp();
   }
+  this->built = true;
 }
 
 ///ExprNode
@@ -93,7 +146,6 @@ AST::ExprNode::ExprNode(exprType type): ASTNode(EXPR){
 }
 
 void AST::ExprNode::build_asp(){
-  //std::cout << "Building " << this->name << std::endl;
   std::string predString = ", ";
   std::string varString = "(";
   std::map<std::string, std::string>::iterator it = this->vars.begin();
@@ -118,16 +170,13 @@ void AST::ExprNode::build_asp(){
       varsSorted = false;
     }
   }
-  //std::cout << this->name << " predString: " << predString << std::endl;
   if(!varsSorted){
-    //std::cout << this->name << " not built" << std::endl;
     return;
   }
   varString += ")";
   std::string buildASP, termASP, subExprASP = "";
   buildASP += this->name + varString + " :- ";
   if(this->terms->type == EXPR){
-    ////////////////
     ExprNode *eNode = dynamic_cast<ExprNode*>(this->terms);
     if(!eNode->built){
       for(it = eNode->vars.begin(); it != eNode->vars.end(); it++){
@@ -143,8 +192,10 @@ void AST::ExprNode::build_asp(){
       if(varsSorted){
         eNode->build_asp();
       }
+      else{
+        return;
+      }
     }
-    ////////////////
     buildASP += this->terms->name;
     subExprASP += this->terms->asp;
   }
@@ -154,9 +205,6 @@ void AST::ExprNode::build_asp(){
   if(this->eType == OR){
     buildASP += predString;
   }
-
-  //std::cout << buildASP << std::endl;
-
   for(ASTNode *temp = this->terms->next; temp; temp = temp->next){
     if(temp->type == EXPR){
       ExprNode *eNode = dynamic_cast<ExprNode*>(temp);
@@ -191,13 +239,9 @@ void AST::ExprNode::build_asp(){
   if(this->eType == AND){
     buildASP += predString;
   }
-  if(varsSorted){
-    this->name += varString;
-    this->asp += buildASP + ".\n" + subExprASP;
-    //std::cout << this->asp << std::endl;
-    //std::cout << this->name << " built\n";
-    this->built = true;
-  }
+  this->name += varString;
+  this->asp += buildASP + ".\n" + subExprASP;
+  this->built = true;
 }
 
 ///TermNode
