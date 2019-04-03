@@ -10,6 +10,9 @@ mnh(
       X = Z
     ),
     regIndex(X,Z),
-    regIndex(Y,Z)
+    regIndex(Y,Z),
+    or(
+      X = Y
+    )
   )
 ).
