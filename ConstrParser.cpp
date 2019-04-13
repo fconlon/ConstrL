@@ -9,6 +9,7 @@ ConstrParser::ConstrParser(){
   this->inFile = NULL;
   this->inFileName = "";
   this->start_new_terms_list = true;
+  this->valid_program = true;
 }
 
 ConstrParser::ConstrParser(std::string fileName){
@@ -18,6 +19,7 @@ ConstrParser::ConstrParser(std::string fileName){
   this->inFile = new std::ifstream(fileName, std::ifstream::in);
   this->inFileName = fileName;
   this->start_new_terms_list = true;
+  this->valid_program = true;
 }
 
 ConstrParser::~ConstrParser(){
@@ -33,9 +35,6 @@ void ConstrParser::set_inFile(std::string fileName){
 char ConstrParser::next_token(){
   this->colNum++;
   char c = this->inFile->get();
-  if(c == '\n'){
-    this->lineNum++;
-  }
   return c;
 }
 
@@ -63,37 +62,33 @@ void ConstrParser::clear_space(){
     c = this->next_token();
     if(c == '\n'){
       this->lineNum++;
+      this->colNum = 0;
     }
   }while(isspace(c));
   this->return_token();
 }
 
-bool ConstrParser::parse(){
+void ConstrParser::add_error(std::string err){
+  this->errors += "line " + std::to_string(this->lineNum);
+  this->errors += " col " + std::to_string(this->colNum);
+  this->errors += ": " + err + "\n";
+}
+
+void ConstrParser::parse(){
   //clear whitespace
   this->clear_space();
   //check if there are more constraints to parse
-  if(this->inFile->peek() < 0){
-    return true;
-  }
-  //check constraint
-  if(this->constraint()){
+  if(this->inFile->peek() >= 0){
+    //check constraint
+    this->constraint();
     char c = this->next_token();
-    if(c == '.'){
-      if(this->parse()){
-        return true;
-      }
-      else{
-        //constraint must be followedby another constraint or nothing
-        return false;
-      }
+    if(c != '.'){
+      this->valid_program = false;
+      this->add_error("Expected a '.'");
+      this->return_token();
     }
-    else{
-      //constraint must be followed by a period
-      return false;
-    }
+    this->parse();
   }
-  //must have at least one constraint
-  return false;
 }
 
 bool ConstrParser::constraint(){

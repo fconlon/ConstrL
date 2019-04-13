@@ -4,13 +4,14 @@
 
 int main(){
   ConstrParser *myParser = new ConstrParser("test.txt");
-  if(myParser->parse()){
+  myParser->parse();
+  if(myParser->valid()){
     std::cout << "pass\n";
     myParser->build_asp();
     std::cout << myParser->get_asp();
   }
   else{
-    std::cout << "fail\n";
+    std::cout << myParser->get_errors();
   }
   /*
   std::ifstream teststream("test.txt", std::ifstream::in);

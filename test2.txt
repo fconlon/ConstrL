@@ -36,3 +36,109 @@ mnh(
     h(T3)
   )
 ).
+
+%regIdxCollision
+regIdxCollision(X, Y, Z) :- regIdxCollision_and1(X, Y, Z), regIdxCollision_mnh(X, Y), reg(X), reg(Y), int(Z).
+regIdxCollision_and1(X, Y, Z) :- regIdxCollision_or2(X, Y, Z), regIndex(X, Z), regIndex(Y, Z), regIdxCollision_or4(X, Y), reg(X), reg(Y), int(Z).
+regIdxCollision_or2(X, Y, Z) :- X = Z, reg(X), reg(Y), int(Z).
+regIdxCollision_or2(X, Y, Z) :- regIdxCollision_or3(Y, Z), reg(X), reg(Y), int(Z).
+regIdxCollision_or3(Y, Z) :- Y = Z, reg(Y), int(Z).
+regIdxCollision_or4(X, Y) :- X = Y, reg(X), reg(Y).
+regIdxCollision_or4(X, Y) :- regIdxCollision_and5(X, Y), reg(X), reg(Y).
+regIdxCollision_and5(X, Y) :- Y = X, reg(X), reg(Y).
+%regIdxCollision_mnh
+regIdxCollision_mnh(X, Y) :- regIdxCollision_or6(X, Y), reg(X), reg(Y).
+regIdxCollision_or6(X, Y) :- X = Y, reg(X), reg(Y).
+
+%regIdxCollision2
+regIdxCollision2(X, Y, Z) :- regIdxCollision2_and1(X, Y, Z), regIdxCollision2_mnh(X, Y), reg(X), reg(Y), int(Z).
+regIdxCollision2_and1(X, Y, Z) :- regIdxCollision2_or2(X, Y, Z), regIndex(X, Z), regIndex(Y, Z), regIdxCollision2_or4(X, Y), reg(X), reg(Y), int(Z).
+regIdxCollision2_or2(X, Y, Z) :- X = Z, reg(X), reg(Y), int(Z).
+regIdxCollision2_or2(X, Y, Z) :- regIdxCollision2_or3(Y, Z), reg(X), reg(Y), int(Z).
+regIdxCollision2_or3(Y, Z) :- Y = Z, reg(Y), int(Z).
+regIdxCollision2_or4(X, Y) :- X = Y, reg(X), reg(Y).
+regIdxCollision2_or4(X, Y) :- regIdxCollision2_and5(X, Y), reg(X), reg(Y).
+regIdxCollision2_and5(X, Y) :- Y = X, reg(X), reg(Y).
+%regIdxCollision2_mnh
+regIdxCollision2_mnh(X, Y) :- regIdxCollision2_or6(X, Y), reg(X), reg(Y).
+regIdxCollision2_or6(X, Y) :- X = Y, reg(X), reg(Y).
+
+
+
+
+
+
+
+
+
+void ConstrParser::constraint(){
+  char c;
+  //get constraint name;
+  std::string cName = this->get_name();
+  this->clear_space();
+  c = this->next_token();
+
+  //check for : to indicate beginning of constraint
+  if(cName.size() == 0){
+    this->valid_program = false;
+    this->add_error("Expected a constraint name");
+  }
+  if(c != ':'){
+    this->valid_program = false;
+    this->add_error("Expected a ':'");
+    this->return_token();
+  }
+  //clear space after :
+  this->clear_space();
+  std::string pred = this->get_name();
+  //check for must or must not
+  if(pred != "mh" && pred != "mnh" && pred != "if"){
+    this->valid_program = false;
+    this->add_error("Expected 'mh', 'mnh', or'if");
+  }
+  this->ast.add_constraint(pred);
+  this->ast.set_name(cName);
+  this->start_new_terms_list = true;
+  this->opcount = 0;
+  this->curr_constr = cName + "_";
+  this->clear_space();
+  if(pred == "if"){
+    this->term();
+    this->clear_space();
+    pred = this->get_name();
+    if(pred != "then"){
+      this->valid_program = false;
+      this->add_error("Expected 'then'");
+    }
+    this->clear_space();
+    if(this->inFile->peek() != '('){
+      pred = this->get_name();
+    }
+    else{
+      this->ast.add_sibling(pred);
+      this->ast.advance();
+      this->ast.set_name(this->curr_constr + pred);
+      this->start_new_terms_list = true;
+    }
+  }
+  if(pred != "mh" && pred != "mnh"){
+    this->valid_program = false;
+    this->add_error("Expected 'mh' or 'mnh'");
+  }
+  c = this->next_token();
+  if(c != '('){
+    this->valid_program = false;
+    this->add_error("Expected '('");
+    this->return_token();
+  }
+  this->clear_space();
+  this->expr();
+  this->ast.ascend();
+  this->clear_space();
+  c = this->next_token();
+  if(c != ')'){
+    this->valid_program = false;
+    this->add_error("Expected ')'");
+    this->return_token();
+  }
+}
