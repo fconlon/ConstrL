@@ -49,7 +49,7 @@ mnh(
 ).
 
 mhTest:
-mnh(
+mh(
   and(
     regIndex(X,Y)
   )

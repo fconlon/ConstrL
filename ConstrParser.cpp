@@ -99,6 +99,12 @@ void ConstrParser::constraint(){
     this->valid_program = false;
     this->add_error("Expected a constraint name");
   }
+  else if(cName == "if"){
+    this->valid_program = false;
+    this->add_error("Expected a constraint name");
+    this->return_token();
+    this->return_token();
+  }
   this->clear_space();
   c = this->next_token();
 
@@ -138,6 +144,9 @@ void ConstrParser::constraint(){
     this->clear_space();
     if(this->inFile->peek() != '('){
       pred = this->get_name();
+      if(pred != "mh" && pred != "mnh"){
+        this->valid_program = false;
+      }
     }
     if(this->valid_program){
       this->ast.add_sibling(pred);
