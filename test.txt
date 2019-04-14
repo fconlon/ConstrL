@@ -47,3 +47,10 @@ mnh(
     X = Y
   )
 ).
+
+mhTest:
+mnh(
+  and(
+    regIndex(X,Y)
+  )
+).

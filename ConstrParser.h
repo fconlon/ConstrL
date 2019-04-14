@@ -15,7 +15,7 @@ class ConstrParser {
     std::string get_name();
     void clear_space();
     void add_error(std::string);
-    bool constraint();
+    void constraint();
     bool expr();
     bool terms_list();
     bool terms();

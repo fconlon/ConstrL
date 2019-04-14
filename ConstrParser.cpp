@@ -91,122 +91,83 @@ void ConstrParser::parse(){
   }
 }
 
-bool ConstrParser::constraint(){
+void ConstrParser::constraint(){
   char c;
   //get constraint name;
   std::string cName = this->get_name();
+  if(cName.size() == 0){
+    this->valid_program = false;
+    this->add_error("Expected a constraint name");
+  }
   this->clear_space();
   c = this->next_token();
 
   //check for : to indicate beginning of constraint
-  if(c == ':'){
-    if(cName.size() == 0){
-      //must have a constraint name
-      return false;
-    }
-    else{
-      //clear space after :
-      this->clear_space();
-      std::string pred = this->get_name();
-      //check for must or must not
-      if(pred == "mh" || pred == "mnh"){
-        this->ast.add_constraint(pred);
-        this->ast.set_name(cName);
-        this->start_new_terms_list = true;
-        this->opcount = 0;
-        this->curr_constr = cName + "_";
-        this->clear_space();
-        c = this->next_token();
-        if(c == '('){
-          this->clear_space();
-          if(this->expr()){
-            this->ast.ascend();
-            this->clear_space();
-            c = this->next_token();
-            if(c == ')'){
-              this->clear_space();
-              return true;
-            }
-            else{
-              //must expression must be followed by ')'
-              return false;
-            }
-          }
-          else{
-            //invalid expression
-            return false;
-          }
-        }
-        else{
-          //must predicate should be followed by '('
-          return false;
-        }
-      }
-      if(pred == "if"){
-        this->ast.add_constraint(pred);
-        this->ast.set_name(cName);
-        this->start_new_terms_list = true;
-        this->opcount = 0;
-        this->curr_constr = cName + "_";
-        this->clear_space();
-        if(this->term()){
-          this->clear_space();
-          pred = this->get_name();
-          if(pred == "then"){
-            this->clear_space();
-            pred = this->get_name();
-            if(pred == "mh" || pred == "mnh"){
-              this->clear_space();
-              c = this->next_token();
-              if(c == '('){
-                this->ast.add_sibling(pred);
-                this->ast.advance();
-                this->ast.set_name(this->curr_constr + pred);
-                this->clear_space();
-                this->start_new_terms_list = true;
-                if(this->expr()){
-                  this->clear_space();
-                  c = this->next_token();
-                  if(c == ')'){
-                    this->clear_space();
-                    return true;
-                  }
-                  else{
-                    //must expression must be followed by ')'
-                    return false;
-                  }
-                }
-                else{
-                  //'(' must be followed by an expression
-                  return false;
-                }
-              }
-              else{
-                //mh/mnh must be followed by '('
-                return false;
-              }
-            }
-            else{
-              //then must be followed by must expression
-              return false;
-            }
-          }
-          else{
-            //if expression must be followed by "then"
-            return false;
-          }
-        }
-        else{
-          //if must be followed by an expression
-          return false;
-        }
-      }
-      //constraint must start with mh, mnh, or if
-      return false;
-    }
+
+  if(c != ':'){
+    this->valid_program = false;
+    this->add_error("Expected a ':'");
+    this->return_token();
   }
-  //constraint name must be followed by :
-  return false;
+  //clear space after :
+  this->clear_space();
+  std::string pred = this->get_name();
+  //check for must or must not
+  if(pred != "mh" && pred != "mnh" && pred != "if"){
+    this->valid_program = false;
+    this->add_error("Expected 'mh', 'mnh', or'if");
+  }
+  //add constraint to AST
+  if(this->valid_program){
+    this->ast.add_constraint(pred);
+    this->ast.set_name(cName);
+  }
+  this->start_new_terms_list = true;
+  this->opcount = 0;
+  this->curr_constr = cName + "_";
+  this->clear_space();
+  // check for "if"
+  if(pred == "if"){
+    this->term();
+    this->clear_space();
+    pred = this->get_name();
+    if(pred != "then"){
+      this->valid_program = false;
+      this->add_error("Expected 'then'");
+    }
+    this->clear_space();
+    if(this->inFile->peek() != '('){
+      pred = this->get_name();
+    }
+    if(this->valid_program){
+      this->ast.add_sibling(pred);
+      this->ast.advance();
+      this->ast.set_name(this->curr_constr + pred);
+    }
+    this->start_new_terms_list = true;
+  }
+  if(pred != "mh" && pred != "mnh"){
+    this->valid_program = false;
+    this->add_error("Expected 'mh' or 'mnh'");
+  }
+  c = this->next_token();
+  if(c != '('){
+    this->valid_program = false;
+    this->add_error("Expected '('");
+    this->return_token();
+  }
+  this->clear_space();
+  this->expr();
+  if(this->valid_program){
+    this->ast.ascend();
+  }
+  this->clear_space();
+  c = this->next_token();
+  if(c != ')'){
+    this->valid_program = false;
+    this->add_error("Expected ')'");
+    this->return_token();
+  }
 }
 
 bool ConstrParser::expr(){
@@ -217,19 +178,25 @@ bool ConstrParser::expr(){
     //save current value for when returning from terms_list()
     bool start_list = this->start_new_terms_list;
     this->start_new_terms_list = true;
-    if(start_list){
-      this->ast.add_child(pred);
-      this->ast.descend();
-    }
-    else{
-      this->ast.add_sibling(pred);
-      this->ast.advance();
+    if(this->valid_program){
+      if(start_list){
+        this->ast.add_child(pred);
+        this->ast.descend();
+      }
+      else{
+        this->ast.add_sibling(pred);
+        this->ast.advance();
+      }
     }
     pred = this->curr_constr + pred + std::to_string(this->opcount);
-    this->ast.set_name(pred);
+    if(this->valid_program){
+      this->ast.set_name(pred);
+    }
     this->clear_space();
     bool retval = this->terms_list();
-    this->ast.ascend();
+    if(this->valid_program){
+      this->ast.ascend();
+    }
     return retval;
   }
   return false;
@@ -293,32 +260,38 @@ bool ConstrParser::term(){
     bool start_list = this->start_new_terms_list;
     this->start_new_terms_list = false;
     if(c == '('){
-      if(start_list){
-        this->ast.add_child("PRED");
-        this->ast.descend();
+      if(this->valid_program){
+        if(start_list){
+          this->ast.add_child("PRED");
+          this->ast.descend();
+        }
+        else{
+          this->ast.add_sibling("PRED");
+          this->ast.advance();
+        }
+        this->ast.set_name(predicate);
       }
-      else{
-        this->ast.add_sibling("PRED");
-        this->ast.advance();
-      }
-      this->ast.set_name(predicate);
       this->clear_space();
       return this->varlist();
     }
     this->return_token();
-    if(start_list){
-      this->ast.add_child("COMP");
-      this->ast.descend();
-    }else{
-      this->ast.add_sibling("COMP");
-      this->ast.advance();
+    if(this->valid_program){
+      if(start_list){
+        this->ast.add_child("COMP");
+        this->ast.descend();
+      }else{
+        this->ast.add_sibling("COMP");
+        this->ast.advance();
+      }
+      this->ast.set_name(predicate);
     }
-    this->ast.set_name(predicate);
     if(this->compop()){
       this->clear_space();
       std::string variable = this->get_name();
       if(variable.size() > 0){
-        this->ast.add_var(variable);
+        if(this->valid_program){
+          this->ast.add_var(variable);
+        }
         return true;
       }
       //comparison operator must be followed by a variable
@@ -335,7 +308,9 @@ bool ConstrParser::varlist(){
   std::string variable = this->get_name();
 
   if(variable.size() > 0){
-    this->ast.add_var(variable);
+    if(this->valid_program){
+      this->ast.add_var(variable);
+    }
     this->clear_space();
     char c = this->next_token();
     if(c == ')'){
@@ -356,7 +331,9 @@ bool ConstrParser::compop(){
   char c = this->next_token();
 
   if(c == '='){
-    this->ast.add_var("=");
+    if(this->valid_program){
+      this->ast.add_var("=");
+    }
     return true;
   }
   if(c == '<' || c == '>'){
@@ -368,13 +345,17 @@ bool ConstrParser::compop(){
     }else{
       op += "=";
     }
-    this->ast.add_var(op);
+    if(this->valid_program){
+      this->ast.add_var(op);
+    }
     return true;
   }
   if(c == '!'){
     c = this->next_token();
     if(c == '='){
-      this->ast.add_var("!=");
+      if(this->valid_program){
+        this->ast.add_var("!=");
+      }
       return true;
     }
     //invalid != operator
