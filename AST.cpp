@@ -95,13 +95,26 @@ void AST::ConstrNode::build_asp() {
 	if (this->cType == MH) {
 		this->asp += varString + " :- not " + this->name \
 			+ "_met" + varString + predString + ".\n";
-		this->asp += this->name + "_met" + varString + " :- " \
-			+ this->terms->name + predString + ".\n";
-
+		this->asp += this->name + "_met" + varString + " :- ";
+		if (this->terms->type == TERM) {
+			this->asp += this->terms->get_asp() + predString + ".\n";
+			return;
+		}
+		else {
+			this->asp += this->terms->name + predString + ".\n";
+		}
+		
 	}
 	this->name += varString;
 	if (this->cType == MNH) {
-		this->asp += varString + " :- " + this->terms->name + predString + ".\n";
+		this->asp += varString + " :- ";
+		if (this->terms->type == TERM) {
+			this->asp += this->terms->get_asp() + predString + ".\n";
+			return;
+		}
+		else {
+			this->asp += this->terms->name + predString + ".\n";
+		}
 	}
 	if (this->cType == IF) {
 		ConstrNode *cNode = dynamic_cast<ConstrNode*>(this->terms->next);

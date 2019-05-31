@@ -55,7 +55,7 @@ mh(
   )
 ).
 
-mhTest2:
-mh(
+mnhTest2:
+mnh(
   pluginReg(A, B)
 ).
