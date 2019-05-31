@@ -3,7 +3,7 @@
 PROG -> CONSTR. | CONSTR.PROG | epsilon
 CONSTR -> NAME: MUST | NAME: if TERM then MUST
 NAME -> valid ASP predicate name
-MUST -> mh(EXPR) | mnh(EXPR)
+MUST -> mh(TERM) | mnh(TERM)
 EXPR -> and TERMSLIST | or TERMSLIST
 TERMSLIST -> (TERMS
 TERMS -> TERM) | TERM,TERMS

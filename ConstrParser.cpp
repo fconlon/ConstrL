@@ -1,5 +1,6 @@
 #include "ConstrParser.h"
 #include <iostream>
+#define ERROR_LIMIT 5
 
 
 ConstrParser::ConstrParser(){
@@ -74,6 +75,29 @@ void ConstrParser::add_error(std::string err){
   this->errors += ": " + err + "\n";
 }
 
+bool ConstrParser::is_keyword(std::string word){
+    if(word == "if"){
+        return true;
+    }
+    else if(word == "then"){
+        return true;
+    }
+    else if(word == "mh"){
+        return true;
+    }
+    else if(word == "mnh"){
+        return true;
+    }
+    else if(word == "and"){
+        return true;
+    }
+    else if(word == "or"){
+        return true;
+    }
+    
+    return false;
+}
+
 void ConstrParser::parse(){
   //clear whitespace
   this->clear_space();
@@ -99,9 +123,9 @@ void ConstrParser::constraint(){
     this->valid_program = false;
     this->add_error("Expected a constraint name");
   }
-  else if(cName == "if"){
+  else if(this->is_keyword(cName)){
     this->valid_program = false;
-    this->add_error("Expected a constraint name");
+    this->add_error("Constraint name can't be a keyword");
     this->return_token();
     this->return_token();
   }
@@ -121,7 +145,7 @@ void ConstrParser::constraint(){
   //check for must or must not
   if(pred != "mh" && pred != "mnh" && pred != "if"){
     this->valid_program = false;
-    this->add_error("Expected 'mh', 'mnh', or'if");
+    this->add_error("Expected 'mh', 'mnh', or 'if");
   }
   //add constraint to AST
   if(this->valid_program){
@@ -166,7 +190,7 @@ void ConstrParser::constraint(){
     this->return_token();
   }
   this->clear_space();
-  this->expr();
+  this->term();
   if(this->valid_program){
     this->ast.ascend();
   }
@@ -231,7 +255,8 @@ bool ConstrParser::terms_list(){
 bool ConstrParser::terms(){
   char c;
 
-  if(this->term()){
+  this->term();
+  if(true){
     this->clear_space();
     c = this->next_token();
     if(c == ')'){
@@ -250,20 +275,24 @@ bool ConstrParser::terms(){
   return false;
 }
 
-bool ConstrParser::term(){
+void ConstrParser::term(){
   std::string predicate = this->get_name();
   if(predicate == "and"){
     this->return_token();
     this->return_token();
     this->return_token();
-    return this->expr();
+    this->expr();
   }
-  if(predicate == "or"){
+  else if(predicate == "or"){
     this->return_token();
     this->return_token();
-    return this->expr();
+    this->expr();
   }
-  if(predicate.size() > 0){
+  else {
+    if(predicate.size() <= 0){
+      this->valid_program = false;
+      this->add_error("Missing predicate/variable name");
+    }
     this->clear_space();
     char c = this->next_token();
     bool start_list = this->start_new_terms_list;
@@ -281,71 +310,69 @@ bool ConstrParser::term(){
         this->ast.set_name(predicate);
       }
       this->clear_space();
-      return this->varlist();
+      this->varlist();
     }
-    this->return_token();
-    if(this->valid_program){
-      if(start_list){
-        this->ast.add_child("COMP");
-        this->ast.descend();
-      }else{
-        this->ast.add_sibling("COMP");
-        this->ast.advance();
+    else{
+      this->return_token();
+      if(this->valid_program){
+        if(start_list){
+          this->ast.add_child("COMP");
+          this->ast.descend();
+        }
+        else{
+          this->ast.add_sibling("COMP");
+          this->ast.advance();
+        }
+        this->ast.set_name(predicate);
       }
-      this->ast.set_name(predicate);
-    }
-    if(this->compop()){
+      this->compop();
       this->clear_space();
       std::string variable = this->get_name();
       if(variable.size() > 0){
         if(this->valid_program){
           this->ast.add_var(variable);
         }
-        return true;
       }
-      //comparison operator must be followed by a variable
-      return false;
+      else{
+        this->valid_program = false;
+        this->add_error("Comparison operator must be followed by variable/constant.");
+      }
     }
-    //predicate must be followed by a comp, or (
-    return false;
   }
-  //invalid term
-  return false;
 }
 
-bool ConstrParser::varlist(){
+void ConstrParser::varlist(){
   std::string variable = this->get_name();
 
-  if(variable.size() > 0){
-    if(this->valid_program){
-      this->ast.add_var(variable);
-    }
-    this->clear_space();
-    char c = this->next_token();
-    if(c == ')'){
-      return true;
-    }
-    if(c == ','){
-      this->clear_space();
-      return this->varlist();
-    }
-    //variable must be followed by ) or ,
-    return false;
+  if(variable.size() <= 0){
+    this->valid_program = false;
+    this->add_error("Expected a variable/constant.");
   }
-  //no variable name given
-  return false;
+  if(this->valid_program){
+    this->ast.add_var(variable);
+  }
+  this->clear_space();
+  char c = this->next_token();
+  if(c == ','){
+    this->clear_space();
+    this->varlist();
+  }
+  else if(c != ')'){
+    this->valid_program = false;
+    this->add_error("Expected ',' or ')' following variable/constant.");
+    this->return_token();
+  }
 }
 
-bool ConstrParser::compop(){
+void ConstrParser::compop(){
   char c = this->next_token();
 
   if(c == '='){
     if(this->valid_program){
       this->ast.add_var("=");
     }
-    return true;
   }
-  if(c == '<' || c == '>'){
+  else if(c == '<' || c == '>'){
     std::string op = "";
     op += c;
     c = this->next_token();
@@ -357,21 +384,25 @@ bool ConstrParser::compop(){
     if(this->valid_program){
       this->ast.add_var(op);
     }
-    return true;
   }
-  if(c == '!'){
+  else if(c == '!'){
     c = this->next_token();
     if(c == '='){
       if(this->valid_program){
         this->ast.add_var("!=");
       }
-      return true;
     }
-    //invalid != operator
-    return false;
+    else{
+      this->valid_program = false;
+      this->add_error("Expected '!='.");
+      this->return_token();
+    }
   }
-  //invalid comparison operator
-  return false;
+  else{
+    this->valid_program = false;
+    this->add_error("Expected comparison operator.");
+    this->return_token();
+  }
 }
 
 void ConstrParser::build_asp(){

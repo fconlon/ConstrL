@@ -15,13 +15,14 @@ class ConstrParser {
     std::string get_name();
     void clear_space();
     void add_error(std::string);
+    bool is_keyword(std::string);
     void constraint();
     bool expr();
     bool terms_list();
     bool terms();
-    bool term();
-    bool varlist();
-    bool compop();
+    void term();
+    void varlist();
+    void compop();
   public:
     ConstrParser();
     ConstrParser(std::string);
