@@ -54,3 +54,8 @@ mh(
     regIndex(X,Y)
   )
 ).
+
+mhTest2:
+mh(
+  pluginReg(A, B)
+).
