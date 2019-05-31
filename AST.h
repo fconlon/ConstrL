@@ -76,7 +76,8 @@ class AST {
 
 	ASTNode *constraints, *curr;
 	std::map<std::string, std::string*> sortMap;
-	std::string asp;
+	std::string asp, buildError;
+	bool buildSucceeded;
 	void initialize_pred_sorts();
 	void destr_helper(ASTNode*);
 	ASTNode* create_node(std::string);
@@ -94,5 +95,7 @@ public:
 	void set_name(std::string);
 	void build_asp();
 	std::string get_asp();
+	bool build_succeeded() { return this->buildSucceeded; }
+	std::string build_error() { return this->buildError; }
 };
 #endif

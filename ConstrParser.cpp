@@ -412,9 +412,20 @@ void ConstrParser::compop() {
 }
 
 void ConstrParser::build_asp() {
-	this->ast.build_asp();
+	if (this->valid_program) {
+		this->ast.build_asp();
+		if (!this->ast.build_succeeded()) {
+			this->valid_program = false;
+			this->errors = this->ast.build_error();
+		}
+	}
 }
 
 std::string ConstrParser::get_asp() {
-	return this->ast.get_asp();
+	if (this->valid_program) {
+		return this->ast.get_asp();
+	}
+	else {
+		return this->errors;
+	}
 }

@@ -5,6 +5,9 @@
 int main() {
 	ConstrParser *myParser = new ConstrParser("test.txt");
 	myParser->parse();
+	myParser->build_asp();
+	std::cout << myParser->get_asp();
+	/*
 	if (myParser->valid()) {
 		std::cout << "pass\n";
 		myParser->build_asp();

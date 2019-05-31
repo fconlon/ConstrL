@@ -57,5 +57,5 @@ mh(
 
 mnhTest2:
 mnh(
-  pluginReg(A, B)
+  X < Y
 ).

@@ -44,6 +44,7 @@ AST::ConstrNode::ConstrNode(constrType type) : ASTNode(CONSTR) {
 void AST::ConstrNode::build_asp() {
 	std::string predString = ", ";
 	std::string varString = "(";
+	std::string unsortedVars = "";
 	std::map<std::string, std::string>::iterator it = this->vars.begin();
 	varString += it->first;
 	bool varsSorted = true;
@@ -52,6 +53,7 @@ void AST::ConstrNode::build_asp() {
 		this->parent->vars[it->first] = it->second;
 	}
 	if (it->second == "") {
+		unsortedVars += it->first;
 		varsSorted = false;
 	}
 	predString += it->second + "(" + it->first + ")";
@@ -63,11 +65,23 @@ void AST::ConstrNode::build_asp() {
 			this->parent->vars[it->first] = it->second;
 		}
 		if (it->second == "") {
+			if (unsortedVars.size() > 0) {
+				unsortedVars += ", " + it->first;
+			}
+			else {
+				unsortedVars += it->first;
+			}
 			varsSorted = false;
 		}
 	}
 	if (!varsSorted) {
-		return;
+		if (this->parent) {
+			return;
+		}
+		else {
+			unsortedVars += " in constraint " + this->name;
+			throw unsortedVars;
+		}
 	}
 	if (this->terms->type == EXPR) {
 		ExprNode *eNode = dynamic_cast<ExprNode*>(this->terms);
@@ -307,6 +321,8 @@ AST::AST() {
 	this->constraints = 0;
 	this->curr = 0;
 	this->asp = "";
+	this->buildError = "Could not identify the types of the variables ";
+	this->buildSucceeded = true;
 	this->initialize_pred_sorts();
 }
 
@@ -526,8 +542,19 @@ void AST::set_name(std::string name) {
 
 void AST::build_asp() {
 	ASTNode *temp = this->constraints;
-	if (!temp) return;
-	temp->build();
+	if (!temp) {
+		this->buildSucceeded = false;
+		this->buildError = "No constraints to parse.\n";
+	}
+	try {
+		temp->build();
+	}
+	catch (std::string unsortedVars) {
+		this->buildSucceeded = false;
+		this->buildError += unsortedVars;
+		this->buildError += "\n";
+		return;
+	}
 
 	while (temp) {
 		this->asp += temp->get_asp() + "\n";
