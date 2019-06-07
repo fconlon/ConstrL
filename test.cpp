@@ -3,7 +3,7 @@
 #include <iostream>
 
 int main() {
-	ConstrParser *myParser = new ConstrParser("test.txt");
+	ConstrParser *myParser = new ConstrParser("regIdxColl.constr");
 	myParser->parse();
 	myParser->build_asp();
 	std::cout << myParser->get_asp();

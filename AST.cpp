@@ -117,7 +117,7 @@ void AST::ConstrNode::build_asp() {
 		else {
 			this->asp += this->terms->name + predString + ".\n";
 		}
-		
+
 	}
 	this->name += varString;
 	if (this->cType == MNH) {
@@ -282,15 +282,14 @@ void AST::TermNode::build_asp() {
 	this->asp += this->name;
 	if (this->tType == PRED) {
 		this->asp += "(";
-		std::map<std::string, std::string>::iterator it;
-		for (it = this->vars.begin(); it != this->vars.end(); it++) {
-			if (it != this->vars.begin()) {
+		for (int i = 0; i < this->posToVar.size(); i++){
+			if (i != 0){
 				this->asp += ", ";
 			}
-			this->asp += it->first;
-			if (!this->parent->vars.count(it->first) ||
-				this->parent->vars[it->first] == "") {
-				this->parent->vars[it->first] = it->second;
+			this->asp += this->posToVar[i];
+			if (!this->parent->vars.count(this->posToVar[i]) ||
+				this->parent->vars[this->posToVar[i]] == ""){
+				this->parent->vars[this->posToVar[i]] = this->vars[this->posToVar[i]];
 			}
 		}
 		this->asp += ")";
@@ -493,6 +492,7 @@ void AST::add_child(std::string type) {
 void AST::add_var(std::string var) {
 	TermNode *tNode = dynamic_cast<TermNode*>(this->curr);
 	if (tNode->tType == PRED) {
+		tNode->posToVar.push_back(var);
 		tNode->add_var(var, this->sortMap[tNode->name][tNode->varPos]);
 		tNode->varPos++;
 	}

@@ -68,6 +68,7 @@ class AST {
 	class TermNode : public ASTNode {
 		termType tType;
 		int varPos;
+		std::vector<std::string> posToVar;
 	public:
 		TermNode(termType);
 		void build_asp();
