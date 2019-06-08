@@ -1,0 +1,2 @@
+regIdxCol:
+mnh(and(regIndex(X, Y), regIndex(Z, Y), X != Z)).

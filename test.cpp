@@ -2,8 +2,8 @@
 #include "AST.h"
 #include <iostream>
 
-int main() {
-	ConstrParser *myParser = new ConstrParser("regIdxColl.constr");
+int main(int argc, const char *argv[]) {
+	ConstrParser *myParser = new ConstrParser(argv[1]);
 	myParser->parse();
 	myParser->build_asp();
 	std::cout << myParser->get_asp();

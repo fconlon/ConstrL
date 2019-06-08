@@ -552,6 +552,7 @@ void AST::set_name(std::string name) {
 
 void AST::build_asp() {
 	ASTNode *temp = this->constraints;
+	std::string constrShowString = "";
 	if (!temp) {
 		this->buildSucceeded = false;
 		this->buildError = "No constraints to parse.\n";
@@ -567,9 +568,16 @@ void AST::build_asp() {
 	}
 
 	while (temp) {
+
+		constrShowString += "#show ";
+		for (int i = 0; isalpha(temp->name[i]); i++){
+			constrShowString += temp->name[i];
+		}
+		constrShowString += "/" + std::to_string(temp->vars.size()) + ".\n";
 		this->asp += temp->get_asp() + "\n";
 		temp = temp->next;
 	}
+	this->asp += constrShowString;
 }
 
 std::string AST::get_asp() {
