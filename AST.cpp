@@ -351,7 +351,7 @@ void AST::initialize_pred_sorts() {
 	this->sortMap["regIsCSRReg"] = new std::string[2]{ "reg", "bool" };
 	this->sortMap["regIsAMSReg"] = new std::string[2]{ "reg", "bool" };
 	this->sortMap["regIsTUSReg"] = new std::string[2]{ "reg", "bool" };
-	this->sortMap["regPseudoName"] = new std::string[2]{ "reg", "name" };
+	this->sortMap["regPseudoName"] = new std::string[2]{ "reg", "pName" };
 	this->sortMap["regSIMDWidth"] = new std::string[2]{ "reg", "int" };
 	this->sortMap["regAttrs"] = new std::string[2]{ "reg", "int" };
 	this->sortMap["regIsShared"] = new std::string[2]{ "reg", "bool" };
